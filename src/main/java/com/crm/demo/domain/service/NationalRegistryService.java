@@ -10,6 +10,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.HttpClient;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -28,10 +30,15 @@ public class NationalRegistryService
 
     public ValidationResultAgainstNationalRegistryDto validateLeadAgainstNationalRegistry( final Lead lead )
     {
-        LeadDto leadFromNationalRegistry;
+        ResponseEntity<LeadDto> leadFromNationalRegistry;
         try
         {
-            leadFromNationalRegistry = nationalRegistryFeignClient.getLeadFromNationalRegistry( lead.getIdNumber() );
+            leadFromNationalRegistry = nationalRegistryFeignClient.getLeadFromNationalRegistry( lead );
+
+            if ( leadFromNationalRegistry.getStatusCode() == HttpStatus.NOT_FOUND )
+            {
+                return validateResponse( lead, null );
+            }
         }
         catch ( Exception e )
         {
@@ -39,7 +46,7 @@ public class NationalRegistryService
             throw new ExternalPublicServiceProcessingException( "ERROR: Failed to get record from national registry for leadId" + lead.getIdNumber() );
         }
 
-        return validateResponse( lead, leadFromNationalRegistry );
+        return validateResponse( lead, leadFromNationalRegistry.getBody() );
     }
 
 
@@ -71,7 +78,7 @@ public class NationalRegistryService
             return ValidationResultAgainstNationalRegistryDto.builder()
                                                              .id( leadFromNationalRegistry.getIdNumber() )
                                                              .isValid( false )
-                                                             .reason( "The data is not updated or there is a mismatch against the National Systems" )
+                                                             .reason( "There is no data, the data is not updated or there is a mismatch against the National Systems" )
                                                              .build();
         }
 

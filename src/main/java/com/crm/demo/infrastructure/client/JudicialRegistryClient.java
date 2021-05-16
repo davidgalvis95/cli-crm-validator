@@ -3,7 +3,9 @@ package com.crm.demo.infrastructure.client;
 import com.crm.demo.domain.JudicialRecordsDto;
 import feign.Headers;
 import feign.RequestLine;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 
 @Headers( { "Accept: application/json",
@@ -11,5 +13,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 public interface JudicialRegistryClient
 {
     @RequestLine( "GET /api/v1/judicial-registry/{leadId}" )
-    JudicialRecordsDto getJudicialRecordsByLeadId( @PathVariable int leadId );
+    @ResponseBody
+    ResponseEntity<JudicialRecordsDto> getJudicialRecordsByLeadId( @PathVariable int leadId );
 }

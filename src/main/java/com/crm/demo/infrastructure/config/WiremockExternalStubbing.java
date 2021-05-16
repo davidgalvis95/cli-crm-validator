@@ -44,6 +44,24 @@ public class WiremockExternalStubbing
         final boolean shouldReturnTheSameObject = ( (int) ( Math.random() * 10 ) ) > 2;
         String jsonLead;
 
+        jsonLead = getJsonlead( lead, shouldReturnTheSameObject );
+
+        stubFor( get( urlPathEqualTo( "/api/v1/national-registry/" + lead.getIdNumber() ) )
+                       .willReturn( aResponse().withStatus( 200 )
+                                               .withHeader( "Content-Type", "application/json" )
+                                               .withBody( jsonLead ) ) );
+
+
+        log.info( "National Registry Service is properly configured" );
+        return this;
+    }
+
+
+    private String getJsonlead( final Lead lead,
+                                final boolean shouldReturnTheSameObject )
+    {
+
+        String jsonLead;
         if ( shouldReturnTheSameObject )
         {
             jsonLead = "{\"idNumber\":" + lead.getIdNumber() + ",\"" +
@@ -60,16 +78,7 @@ public class WiremockExternalStubbing
                        "lastName\":\"" + GENERATOR.nextObject( String.class ) + "\",\"" +
                        "email\":\"" + GENERATOR.nextObject( String.class ) + "@addi.com\"}";
         }
-
-
-        stubFor( get( urlPathEqualTo( "/api/v1/national-registry/" + lead.getIdNumber() ) )
-                       .willReturn( aResponse().withStatus( 200 )
-                                               .withHeader( "Content-Type", "application/json" )
-                                               .withBody( jsonLead ) ) );
-
-
-        log.info( "National Registry Service is properly configured" );
-        return this;
+        return jsonLead;
     }
 
 
