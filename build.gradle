@@ -28,14 +28,11 @@ docker {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
-//    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb-reactive'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.jeasy:easy-random-core:5.0.0'
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:3.0.2'
     implementation 'io.github.openfeign:feign-jackson:9.3.1'
-//    implementation 'com.github.tomakehurst:wiremock-jre8:2.28.0'
-//    implementation 'com.github.tomakehurst:wiremock-jre8-standalone:2.27.2'
     implementation 'com.github.tomakehurst:wiremock:2.25.1'
     implementation 'org.mock-server:mockserver-netty:3.10.8'
     implementation 'org.mock-server:mockserver-client-java:3.10.8'

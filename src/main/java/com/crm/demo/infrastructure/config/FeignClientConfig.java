@@ -7,6 +7,7 @@ import feign.Feign;
 import feign.jackson.JacksonDecoder;
 import feign.jackson.JacksonEncoder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,12 +20,19 @@ public class FeignClientConfig
 
     private final String judicialServiceUrl;
 
+    private final String judicialServiceMockedUrl;
+
+    private final String nationalServiceMockedUrl;
 
     public FeignClientConfig( @Value( "${national.registry.url}" ) final String nationalRegistryUrl,
-                              @Value( "${judicial.registry.url}" ) final String judicialServiceUrl )
+                              @Value( "${judicial.registry.url}" ) final String judicialServiceUrl,
+                              @Value( "${judicial.registry.mocked.url}" ) final String judicialServiceMockedUrl,
+                              @Value( "${national.registry.mocked.url}" ) final String nationalServiceMockedUrl )
     {
         this.nationalRegistryUrl = nationalRegistryUrl;
         this.judicialServiceUrl = judicialServiceUrl;
+        this.judicialServiceMockedUrl = judicialServiceMockedUrl;
+        this.nationalServiceMockedUrl = nationalServiceMockedUrl;
     }
 
 
@@ -49,5 +57,10 @@ public class FeignClientConfig
                     .encoder( new JacksonEncoder( objectMapper ) )
                     .decoder( jacksonDecoder )
                     .target( JudicialRegistryClient.class, judicialServiceUrl );
+    }
+
+    @Bean
+    public Pair<String, String> externalServiceUrls(){
+        return Pair.of( nationalServiceMockedUrl, judicialServiceMockedUrl );
     }
 }
