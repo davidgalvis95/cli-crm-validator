@@ -12,7 +12,8 @@ import java.time.LocalDate;
 @Builder
 @ToString
 @AllArgsConstructor
-public class LeadDto extends ExternalResponses
+public class LeadDto
+      extends ExternalResponses
 {
     private Integer idNumber;
 

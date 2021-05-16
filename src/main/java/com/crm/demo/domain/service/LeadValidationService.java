@@ -1,11 +1,8 @@
 package com.crm.demo.domain.service;
 
-import com.crm.demo.domain.JudicialRecordsDto;
 import com.crm.demo.domain.Lead;
-import com.crm.demo.domain.LeadDto;
 import com.crm.demo.domain.LeadValidationResponseDto;
-import com.crm.demo.infrastructure.client.JudicialRegistryClientMock;
-import com.crm.demo.infrastructure.client.NationalRegistryClientMock;
+import com.crm.demo.domain.ValidationResultAgainstNationalRegistryDto;
 import com.crm.demo.infrastructure.config.MockServerConfig;
 import com.crm.demo.infrastructure.repository.LeadRepository;
 import com.crm.demo.infrastructure.repository.ScoreRepository;
@@ -38,6 +35,8 @@ public class LeadValidationService
 {
     private static final EasyRandom GENERATOR = new EasyRandom();
 
+    private static final HttpClient HTTP_CLIENT = HttpClientBuilder.create().build();
+
     private LeadRepository leadRepository;
 
     private ScoreRepository scoreRepository;
@@ -48,34 +47,25 @@ public class LeadValidationService
 
     private ObjectMapper objectMapper;
 
-    private JudicialRegistryClientMock judicialRegistryClientMock;
-
-    private NationalRegistryClientMock nationalRegistryClientMock;
-
-    private static final HttpClient HTTP_CLIENT = HttpClientBuilder.create().build();
-
 
     @Autowired
     public LeadValidationService( final LeadRepository leadRepository,
                                   final ScoreRepository scoreRepository,
                                   final NationalRegistryService nationalRegistryService,
                                   final JudicialService judicialService,
-                                  final ObjectMapper objectMapper,
-                                  final JudicialRegistryClientMock judicialRegistryClientMock,
-                                  final NationalRegistryClientMock nationalRegistryClientMock )
+                                  final ObjectMapper objectMapper )
     {
         this.leadRepository = leadRepository;
         this.scoreRepository = scoreRepository;
         this.nationalRegistryService = nationalRegistryService;
         this.judicialService = judicialService;
         this.objectMapper = objectMapper;
-        this.judicialRegistryClientMock = judicialRegistryClientMock;
-        this.nationalRegistryClientMock = nationalRegistryClientMock;
     }
 
 
     @Override
-    public LeadValidationResponseDto validateLead( final Integer leadId )
+    public LeadValidationResponseDto validateLead( final Integer leadId,
+                                                   final boolean isASampleLead )
     {
         Lead lead = leadRepository.findByIdNumber( leadId );
 
@@ -100,23 +90,42 @@ public class LeadValidationService
 
         try
         {
-            final CompletableFuture<Boolean> leadMatchesNationalServiceAndInternalOnesFuture = leadFromNationalRegistrySystemMatchesInternalDB( lead );
-            final CompletableFuture<Boolean> leadHasNotAJudicialRecord = leadHasNoJudicialRecords( lead );
-            final List<CompletableFuture<Boolean>> validationsFromExternalSources = Arrays.asList( leadMatchesNationalServiceAndInternalOnesFuture, leadHasNotAJudicialRecord );
-            validationResults = CompletableFuture.allOf( leadMatchesNationalServiceAndInternalOnesFuture, leadHasNotAJudicialRecord )
+            final CompletableFuture<Boolean> leadMatchesNationalServiceAndInternalOnesFuture = leadFromNationalRegistrySystemMatchesInternalDB( lead, isASampleLead );
+            final CompletableFuture<Boolean> leadHasJudicialRecords = leadHasJudicialRecords( lead, isASampleLead );
+
+            final List<CompletableFuture<Boolean>> validationsFromExternalSources = Arrays.asList( leadMatchesNationalServiceAndInternalOnesFuture, leadHasJudicialRecords );
+            validationResults = CompletableFuture.allOf( leadMatchesNationalServiceAndInternalOnesFuture, leadHasJudicialRecords )
                                                  .thenApply( future -> validationsFromExternalSources.stream()
                                                                                                      .map( CompletableFuture::join )
                                                                                                      .collect( Collectors.toList() ) )
                                                  .toCompletableFuture().get();
+
+            if ( leadHasJudicialRecords.isCompletedExceptionally() || leadMatchesNationalServiceAndInternalOnesFuture.isCompletedExceptionally() )
+            {
+                server.stop();
+                log.warn( "Processing completed with exceptions for lead id {}", leadId );
+                return LeadValidationResponseDto.builder()
+                                                .lead( lead )
+                                                .score( null )
+                                                .isAProspect( false )
+                                                .reasonMessage( "Failed to get information from external systems" )
+                                                .build();
+            }
         }
         catch ( InterruptedException | ExecutionException e )
         {
             System.out.println( "There was an error processing customer with id: " + leadId );
-            log.warn( "There was an error processing customer with id: {}", e.getMessage() );
+            log.warn( "There was an error processing lead with id: {}", e.getMessage() );
             server.stop();
+            return LeadValidationResponseDto.builder()
+                                            .lead( lead )
+                                            .score( null )
+                                            .isAProspect( false )
+                                            .reasonMessage( "Failed to process the validation" )
+                                            .build();
         }
 
-        if ( validationResults.size() == 2 && validationResults.get( 0 ) && validationResults.get( 1 ) )
+        if ( validationResults.size() == 2 && validationResults.get( 0 ) && !validationResults.get( 1 ) )
         {
             final LeadValidationResponseDto.LeadValidationResponseDtoBuilder result = LeadValidationResponseDto.builder().lead( lead );
             final int score = scoreRepository.findScoreByLeadId();
@@ -137,6 +146,7 @@ public class LeadValidationService
                          .build();
         }
 
+        server.stop();
         return LeadValidationResponseDto.builder()
                                         .lead( lead )
                                         .score( null )
@@ -147,21 +157,31 @@ public class LeadValidationService
 
 
     @Async
-    public CompletableFuture<Boolean> leadFromNationalRegistrySystemMatchesInternalDB( final Lead lead )
+    public CompletableFuture<Boolean> leadFromNationalRegistrySystemMatchesInternalDB( final Lead lead,
+                                                                                       final Boolean isASampleLead )
     {
         return CompletableFuture.supplyAsync( () -> {
-            final LeadDto leadDto = nationalRegistryClientMock.getMockedResponseFromNationalService( lead.getIdNumber(), objectMapper, HTTP_CLIENT );
-            return leadDto != null;
+            if ( isASampleLead )
+            {
+                final ValidationResultAgainstNationalRegistryDto response = nationalRegistryService.validateSampleLeadAgainstNationalRegistry( lead, objectMapper, HTTP_CLIENT );
+                return Objects.nonNull( response ) && response.getIsValid();
+            }
+            final ValidationResultAgainstNationalRegistryDto response = nationalRegistryService.validateLeadAgainstNationalRegistry( lead );
+            return Objects.nonNull( response ) && response.getIsValid();
         } );
     }
 
 
     @Async
-    public CompletableFuture<Boolean> leadHasNoJudicialRecords( final Lead lead )
+    public CompletableFuture<Boolean> leadHasJudicialRecords( final Lead lead,
+                                                              final Boolean isASampleLead )
     {
         return CompletableFuture.supplyAsync( () -> {
-            final JudicialRecordsDto judicialRecordsDto = judicialRegistryClientMock.getMockedResponseFromJudicialService( lead.getIdNumber(), objectMapper, HTTP_CLIENT );
-            return judicialRecordsDto != null;
+            if ( isASampleLead )
+            {
+                return judicialService.validateIfSampleLeadHasAnyJudicialRecord( lead.getIdNumber(), objectMapper, HTTP_CLIENT );
+            }
+            return judicialService.validateIfLeadHasAnyJudicialRecord( lead.getIdNumber() );
         } );
     }
 

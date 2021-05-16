@@ -15,6 +15,7 @@ import static org.mockserver.matchers.Times.exactly;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
+
 @Slf4j
 public class MockServerConfig
 {
@@ -71,19 +72,20 @@ public class MockServerConfig
         log.info( "National Registry Service is properly configured" );
     }
 
+
     public void stubJudicialRegistryResponse( final Integer leadId,
                                               final ClientAndServer server )
     {
-        final boolean shouldHaveJudicialRecords = ( (int) ( Math.random() * 10 ) ) > 1;
+        final boolean shouldHaveJudicialRecords = ( (int) ( Math.random() * 10 ) ) < 1;
         String resultJson;
 
         if ( shouldHaveJudicialRecords )
         {
-            resultJson = "{\"id\":"+ leadId +",\"hasJudicialRecords\":true}";
+            resultJson = "{\"id\":" + leadId + ",\"hasJudicialRecords\":true}";
         }
         else
         {
-            resultJson = "{\"id\":"+ leadId +",\"hasJudicialRecords\":false}";
+            resultJson = "{\"id\":" + leadId + ",\"hasJudicialRecords\":false}";
         }
 
         new MockServerClient( "127.0.0.1", 9000 )

@@ -31,11 +31,11 @@ public class JudicialRegistryClientMock
                                                                     final ObjectMapper objectMapper,
                                                                     final HttpClient client )
     {
-        JudicialRecordsDto response = null;
+        JudicialRecordsDto response;
         final String url = URL + leadId;
         try
         {
-            response = deserializeResponse( url, objectMapper, client, JudicialRecordsDto.class );//objectMapper.readValue( EntityUtils.toString( client.execute( new HttpGet( URL + leadId ) ).getEntity(), "UTF-8" ), JudicialRecordsDto.class );
+            response = deserializeResponse( url, objectMapper, client, JudicialRecordsDto.class );
         }
         catch ( IOException e )
         {

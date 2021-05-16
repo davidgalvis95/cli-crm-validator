@@ -34,7 +34,7 @@ public class NationalRegistryClientMock
         final String url = URL + leadId;
         try
         {
-            response = deserializeResponse( url, objectMapper, client, LeadDto.class );//objectMapper.readValue( EntityUtils.toString( client.execute( new HttpGet( URL + leadId ) ).getEntity(), "UTF-8" ), JudicialRecordsDto.class );
+            response = deserializeResponse( url, objectMapper, client, LeadDto.class );
         }
         catch ( IOException e )
         {

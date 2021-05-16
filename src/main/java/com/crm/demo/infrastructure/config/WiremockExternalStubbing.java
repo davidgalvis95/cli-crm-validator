@@ -13,6 +13,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 
+
 @Slf4j
 @Component
 public class WiremockExternalStubbing
@@ -21,17 +22,22 @@ public class WiremockExternalStubbing
 
     public WireMockServer server;
 
-    public WiremockExternalStubbing setUp(){
+
+    public WiremockExternalStubbing setUp()
+    {
         server = new WireMockServer( 8000 );
         server.start();
         log.info( "Wiremock has started in the following url: {}", "http://localhost:8000\n\n" );
         return this;
     }
 
-    public WiremockExternalStubbing resetServer() {
+
+    public WiremockExternalStubbing resetServer()
+    {
         server.resetAll();
         return this;
     }
+
 
     public WiremockExternalStubbing stubNationalRegistryResponse( final Lead lead )
     {
@@ -42,27 +48,24 @@ public class WiremockExternalStubbing
         {
             jsonLead = "{\"idNumber\":" + lead.getIdNumber() + ",\"" +
                        "birthDate\":\"" + lead.getBirthDate().toString() + "\",\"" +
-                       "firstName\":\""+ lead.getFirstName() + "\",\"" +
-                       "lastName\":\""+ lead.getLastName() +"\",\"" +
+                       "firstName\":\"" + lead.getFirstName() + "\",\"" +
+                       "lastName\":\"" + lead.getLastName() + "\",\"" +
                        "email\":\"" + lead.getEmail() + "\"}";
-
         }
         else
         {
             jsonLead = "{\"idNumber\":" + lead.getIdNumber() + ",\"" +
                        "birthDate\":\"" + GENERATOR.nextObject( LocalDate.class ).toString() + "\",\"" +
-                       "firstName\":\""+ GENERATOR.nextObject( String.class ) + "\",\"" +
-                       "lastName\":\""+ GENERATOR.nextObject( String.class ) +"\",\"" +
+                       "firstName\":\"" + GENERATOR.nextObject( String.class ) + "\",\"" +
+                       "lastName\":\"" + GENERATOR.nextObject( String.class ) + "\",\"" +
                        "email\":\"" + GENERATOR.nextObject( String.class ) + "@addi.com\"}";
-
         }
 
-        var x = get( urlPathEqualTo( "/api/v1/national-registry/" + lead.getIdNumber() ) )
-              .willReturn( aResponse().withStatus( 200 )
-                                      .withHeader( "Content-Type", "application/json" )
-                                      .withBody( jsonLead ) );
 
-        stubFor( x );
+        stubFor( get( urlPathEqualTo( "/api/v1/national-registry/" + lead.getIdNumber() ) )
+                       .willReturn( aResponse().withStatus( 200 )
+                                               .withHeader( "Content-Type", "application/json" )
+                                               .withBody( jsonLead ) ) );
 
 
         log.info( "National Registry Service is properly configured" );
@@ -77,11 +80,11 @@ public class WiremockExternalStubbing
 
         if ( shouldHaveJudicialRecords )
         {
-            resultJson = "{\"id\":"+ leadId +",\"hasJudicialRecords\":true}";
+            resultJson = "{\"id\":" + leadId + ",\"hasJudicialRecords\":true}";
         }
         else
         {
-            resultJson = "{\"id\":"+ leadId +",\"hasJudicialRecords\":false}";
+            resultJson = "{\"id\":" + leadId + ",\"hasJudicialRecords\":false}";
         }
 
 
@@ -95,8 +98,10 @@ public class WiremockExternalStubbing
         return this;
     }
 
-    public WiremockExternalStubbing status() {
-        System.out.println("Stubbing Started!");
+
+    public WiremockExternalStubbing status()
+    {
+        System.out.println( "Stubbing Started!" );
         return this;
     }
 }

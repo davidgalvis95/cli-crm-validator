@@ -2,9 +2,10 @@ package com.crm.demo.infrastructure.repository;
 
 import org.springframework.stereotype.Component;
 
+
 /**
  * MockRepo that simulates a fetching of score
- * **/
+ **/
 
 @Component
 public class ScoreRepository

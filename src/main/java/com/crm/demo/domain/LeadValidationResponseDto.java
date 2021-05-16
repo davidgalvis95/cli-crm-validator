@@ -19,4 +19,4 @@ public class LeadValidationResponseDto
     Boolean isAProspect;
 
     String reasonMessage;
- }
+}

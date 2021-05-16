@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+
 @Slf4j
 @Configuration
 public class FeignClientConfig
@@ -23,6 +24,7 @@ public class FeignClientConfig
     private final String judicialServiceMockedUrl;
 
     private final String nationalServiceMockedUrl;
+
 
     public FeignClientConfig( @Value( "${national.registry.url}" ) final String nationalRegistryUrl,
                               @Value( "${judicial.registry.url}" ) final String judicialServiceUrl,
@@ -59,8 +61,10 @@ public class FeignClientConfig
                     .target( JudicialRegistryClient.class, judicialServiceUrl );
     }
 
+
     @Bean
-    public Pair<String, String> externalServiceUrls(){
+    public Pair<String, String> externalServiceMockedUrls()
+    {
         return Pair.of( nationalServiceMockedUrl, judicialServiceMockedUrl );
     }
 }
