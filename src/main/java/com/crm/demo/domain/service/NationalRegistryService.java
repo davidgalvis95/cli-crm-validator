@@ -35,7 +35,7 @@ public class NationalRegistryService
         {
             leadFromNationalRegistry = nationalRegistryFeignClient.getLeadFromNationalRegistry( lead );
 
-            if ( leadFromNationalRegistry.getStatusCode() == HttpStatus.NOT_FOUND )
+            if ( leadFromNationalRegistry.getStatusCode() == HttpStatus.NOT_FOUND || leadFromNationalRegistry.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR )
             {
                 return validateResponse( lead, null );
             }

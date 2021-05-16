@@ -33,9 +33,9 @@ public class JudicialService
         {
             judicialRecords = judicialRegistryClient.getJudicialRecordsByLeadId( leadId );
 
-            if ( judicialRecords.getStatusCode() == HttpStatus.NOT_FOUND )
+            if ( judicialRecords.getStatusCode() == HttpStatus.NOT_FOUND || judicialRecords.getStatusCode() == HttpStatus.INTERNAL_SERVER_ERROR )
             {
-                return true;
+                return null;
             }
         }
         catch ( Exception e )
